@@ -1,0 +1,5 @@
+symbol,chromosome,position,ref_allele,alt_allele,allele_frequency,quality_score
+BRCA1,17,43094692,G,A,0.0021,58.3
+TP53,17,7577120,T,C,0.0007,92.4
+EGFR,7,55181378,G,T,0.0012,88.7
+KRAS,12,25245350,C,T,0.0035,95.1

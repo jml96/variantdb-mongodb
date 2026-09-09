@@ -1,0 +1,9 @@
+cd
+cd Documents/Brompton/variantdb_mongodb/
+conda update -n base -c conda-forge conda
+conda env create -f environment.yml
+conda activate variantdb_mongodb
+python manage.py flush
+python manage.py migrate variants 0001
+python manage.py migrate
+python manage.py runserver

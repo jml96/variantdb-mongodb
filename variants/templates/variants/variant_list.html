@@ -1,0 +1,242 @@
+{% extends "variants/base.html" %}
+
+{% block extra_head %}
+  <!-- DataTables CSS -->
+  <link href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+
+  <!-- Bokeh CSS & JS CDN Resources -->
+  {% for css_url in bokeh_css_files %}
+    <link href="{{ css_url }}" rel="stylesheet" type="text/css">
+  {% endfor %}
+  {% for js_url in bokeh_js_files %}
+    <script src="{{ js_url }}"></script>
+  {% endfor %}
+{% endblock %}
+
+{% block content %}
+<!-- 1. Sample Tracking (MongoDB) Table -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h2 class="h4 m-0">Sample Tracking (MongoDB)</h2>
+      {% if is_simulated_mongo %}
+        <span class="badge bg-warning text-dark">Simulated Mongo Data</span>
+      {% else %}
+        <span class="badge bg-success">Connected to MongoDB</span>
+      {% endif %}
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover align-middle">
+        <thead class="table-secondary">
+          <tr>
+            <th>Sample ID</th>
+            <th>Patient ID</th>
+            <th>Gene Panel</th>
+            <th>Status</th>
+            <th>Sequencing Depth</th>
+            <th class="text-center">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sample in samples %}
+          <tr {% if selected_sample_id == sample.sample_id %}class="table-active"{% endif %}>
+            <td><code>{{ sample.sample_id }}</code></td>
+            <td>{{ sample.patient_id }}</td>
+            <td>{{ sample.gene_panel }}</td>
+            <td>
+              {% if sample.status == "Completed" %}
+                <span class="badge bg-success">{{ sample.status }}</span>
+              {% elif sample.status == "In Progress" %}
+                <span class="badge bg-info text-dark">{{ sample.status }}</span>
+              {% else %}
+                <span class="badge bg-danger">{{ sample.status }}</span>
+              {% endif %}
+            </td>
+            <td>{{ sample.sequencing_depth }}</td>
+            <td class="text-center">
+              <a href="?sample_id={{ sample.sample_id }}" 
+                 class="btn btn-sm {% if selected_sample_id == sample.sample_id %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                {% if selected_sample_id == sample.sample_id %}Viewing Details{% else %}Select Sample{% endif %}
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Selected Sample Details Section -->
+{% if selected_sample %}
+  <hr class="my-4">
+
+  {% if selected_sample.status == "Completed" %}
+    <!-- Bokeh Quality Scatter Plot -->
+    {% if bokeh_div %}
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-header bg-light">
+            <h3 class="h5 m-0">Quality Analysis Plot — <code>{{ selected_sample.sample_id }}</code></h3>
+          </div>
+          <div class="card-body">
+            {{ bokeh_div|safe }}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Genomic Variants Table -->
+    <div class="row mb-5">
+      <div class="col-12">
+        <h3 class="h4 mb-3">Genomic Variants for <code>{{ selected_sample.sample_id }}</code></h3>
+        <div class="table-responsive">
+          <table id="variants-table" class="table table-striped table-hover align-middle">
+            <thead class="table-dark">
+              <tr>
+                <th>Gene</th>
+                <th>Chromosome</th>
+                <th>Position</th>
+                <th>Ref</th>
+                <th>Alt</th>
+                <th>Allele Frequency</th>
+                <th>Quality Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for variant in variants %}
+              <tr>
+                <td><strong>{{ variant.gene.symbol }}</strong></td>
+                <td>{{ variant.gene.chromosome }}</td>
+                <td>{{ variant.position }}</td>
+                <td><code>{{ variant.ref_allele }}</code></td>
+                <td><code>{{ variant.alt_allele }}</code></td>
+                <td>{{ variant.allele_frequency }}</td>
+                <td>{{ variant.quality_score }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="7" class="text-center text-muted">No variants recorded for this sample.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  {% elif selected_sample.status == "In Progress" %}
+    <!-- In Progress Workflow Breakdown -->
+    <div class="card border-info shadow-sm mb-4">
+      <div class="card-header bg-info bg-opacity-10 d-flex justify-content-between align-items-center">
+        <h3 class="h5 m-0 text-info-emphasis">
+          Sequencing Pipeline Progress — <code>{{ selected_sample.sample_id }}</code>
+        </h3>
+        <span class="badge bg-info text-dark">In Progress</span>
+      </div>
+      <div class="card-body">
+        <p class="card-text text-muted mb-4">
+          Genomic variant calling and interactive quality scatter plots will be rendered upon pipeline completion.
+        </p>
+
+        <div class="row g-4">
+          <!-- Completed Pipeline Steps -->
+          <div class="col-md-6">
+            <h4 class="h6 text-success fw-bold">✓ Completed Steps</h4>
+            <ul class="list-group list-group-flush">
+              {% for step in selected_sample.completed_steps %}
+                <li class="list-group-item list-group-item-success py-2">
+                  <small>✓ {{ step }}</small>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <!-- Pending Pipeline Steps -->
+          <div class="col-md-6">
+            <h4 class="h6 text-primary fw-bold">⏳ Pending & Active Steps</h4>
+            <ul class="list-group list-group-flush">
+              {% for step in selected_sample.pending_steps %}
+                <li class="list-group-item list-group-item-light py-2">
+                  <small class="text-secondary">○ {{ step }}</small>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  {% elif selected_sample.status == "QC Warning" %}
+    <!-- QC Warning Detailed Metrics -->
+    <div class="card border-danger shadow-sm mb-4">
+      <div class="card-header bg-danger bg-opacity-10 d-flex justify-content-between align-items-center">
+        <h3 class="h5 m-0 text-danger">
+          Quality Control Diagnostics — <code>{{ selected_sample.sample_id }}</code>
+        </h3>
+        <span class="badge bg-danger">QC Warning</span>
+      </div>
+      <div class="card-body">
+        <p class="card-text text-muted mb-4">
+          This sample was flagged during automated Quality Assurance check. Sequencing results are currently held pending re-run or manual lab review.
+        </p>
+
+        <div class="row g-4">
+          <!-- Failed QC Checks -->
+          <div class="col-md-6">
+            <h4 class="h6 text-danger fw-bold">✕ Failed Quality Checks</h4>
+            <ul class="list-group mb-3">
+              {% for failed_check in selected_sample.qc_tests.failed %}
+                <li class="list-group-item list-group-item-danger py-2">
+                  <small><strong>✕</strong> {{ failed_check }}</small>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <!-- Passed QC Checks -->
+          <div class="col-md-6">
+            <h4 class="h6 text-success fw-bold">✓ Passed Quality Checks</h4>
+            <ul class="list-group">
+              {% for passed_check in selected_sample.qc_tests.passed %}
+                <li class="list-group-item list-group-item-success py-2">
+                  <small><strong>✓</strong> {{ passed_check }}</small>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+{% else %}
+  <div class="alert alert-info shadow-sm mt-3 text-center" role="alert">
+    Select any sample from the tracking database above to view its variants, workflow status, or QC diagnosis.
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+
+  {% if bokeh_script %}
+    {{ bokeh_script|safe }}
+  {% endif %}
+
+  <script>
+    $(document).ready(function() {
+      if ($('#variants-table').length) {
+        $('#variants-table').DataTable({
+          "order": [[0, "asc"], [2, "asc"]],
+          "pageLength": 10
+        });
+      }
+    });
+  </script>
+{% endblock %}

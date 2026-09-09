@@ -1,0 +1,13 @@
+name: variantdb_mongodb
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - django==5.2.17
+      - bokeh==3.9.2
+      - psycopg2-binary==2.9.10   # PostgreSQL adapter (for the team's production DB)
+      - black                     # code formatter (PEP8)
+      - flake8                    # linter (PEP8)
+      - pymongo>=4.0              # MongoDB driver for sample tracking
