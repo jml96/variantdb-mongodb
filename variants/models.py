@@ -33,6 +33,10 @@ class Variant(models.Model):
         on_delete=models.CASCADE,
         related_name="variants",
     )
+    sample_id = models.CharField(
+        max_length=64,
+        help_text="Identifier of the sample this variant belongs to (links to sample.csv).",
+    )
     position = models.PositiveIntegerField(help_text="Genomic position (bp).")
     ref_allele = models.CharField(max_length=16, verbose_name="Reference allele")
     alt_allele = models.CharField(max_length=16, verbose_name="Alternate allele")

@@ -21,10 +21,11 @@ class GeneAdmin(admin.ModelAdmin):
 class VariantAdmin(admin.ModelAdmin):
     list_display = (
         "gene",
+        "sample_id",
         "position",
         "ref_allele",
         "alt_allele",
         "allele_frequency",
         "quality_score",
     )
-    list_filter = ("gene",)
+    list_filter = ("gene", "sample_id")

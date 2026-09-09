@@ -14,15 +14,33 @@
 {% endblock %}
 
 {% block content %}
+
+{% if mongo_unavailable %}
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="alert alert-danger shadow-sm d-flex align-items-center" role="alert">
+      <div>
+        <strong>MongoDB is unavailable.</strong>
+        The application is configured to read data from MongoDB (<code>DATA_SOURCE = "mongodb"</code>),
+        but a connection to the database could not be established. The sample and variant data shown
+        below is being served from the local CSV fallback files instead of MongoDB.
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <!-- 1. Sample Tracking (MongoDB) Table -->
 <div class="row mb-4">
   <div class="col-12">
     <div class="d-flex align-items-center justify-content-between mb-3">
       <h2 class="h4 m-0">Sample Tracking (MongoDB)</h2>
-      {% if is_simulated_mongo %}
-        <span class="badge bg-warning text-dark">Simulated Mongo Data</span>
-      {% else %}
+      {% if samples_source == "mongodb" %}
         <span class="badge bg-success">Connected to MongoDB</span>
+      {% elif samples_source == "mongodb_unavailable" %}
+        <span class="badge bg-danger">MongoDB Unavailable — Showing CSV Data</span>
+      {% else %}
+        <span class="badge bg-secondary">CSV Data Source</span>
       {% endif %}
     </div>
 
@@ -92,7 +110,16 @@
     <!-- Genomic Variants Table -->
     <div class="row mb-5">
       <div class="col-12">
-        <h3 class="h4 mb-3">Genomic Variants for <code>{{ selected_sample.sample_id }}</code></h3>
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h3 class="h4 m-0">Genomic Variants for <code>{{ selected_sample.sample_id }}</code></h3>
+          {% if variants_source == "mongodb" %}
+            <span class="badge bg-success">Connected to MongoDB</span>
+          {% elif variants_source == "mongodb_unavailable" %}
+            <span class="badge bg-danger">MongoDB Unavailable — Showing CSV Data</span>
+          {% elif variants_source == "csv" %}
+            <span class="badge bg-secondary">CSV Data Source</span>
+          {% endif %}
+        </div>
         <div class="table-responsive">
           <table id="variants-table" class="table table-striped table-hover align-middle">
             <thead class="table-dark">

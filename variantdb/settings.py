@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -143,6 +144,33 @@ MAILERS = {
     },
 }
 
+# Data Source Toggle: choose where sample & variant data is read from.
+#   "csv"      -> read from variants/data/sample.csv and variants/data/variants.csv
+#   "mongodb"  -> read from the MongoDB collections configured below
+DATA_SOURCE = "csv"
+
 # MongoDB Settings (Sample Tracking DB)
-MONGO_URI = "mongodb://localhost:27017/"
-MONGO_DB_NAME = "sample_tracking_db"
+#
+# Credentials are never hardcoded here. Set these as environment variables
+# (e.g. in a local, git-ignored .env file — see .gitignore) or via your
+# deployment platform's secrets manager:
+#   MONGO_HOST     - host or SRV address, no credentials, e.g. cluster0.mongodb.net
+#   MONGO_USER     - database username (optional for local/no-auth MongoDB)
+#   MONGO_PASSWORD - database password (optional for local/no-auth MongoDB)
+#   MONGO_DB_NAME  - target database name
+#
+# If MONGO_USER is not set, an unauthenticated local connection is used.
+MONGO_HOST = os.environ.get("MONGO_HOST", "localhost:27017")
+MONGO_USER = os.environ.get("MONGO_USER", "")
+MONGO_PASSWORD = os.environ.get("MONGO_PASSWORD", "")
+MONGO_DB_NAME = os.environ.get("MONGO_DB_NAME", "sample_tracking_db")
+
+if MONGO_USER:
+    from urllib.parse import quote_plus
+
+    MONGO_URI = (
+        f"mongodb+srv://{quote_plus(MONGO_USER)}:{quote_plus(MONGO_PASSWORD)}"
+        f"@{MONGO_HOST}/"
+    )
+else:
+    MONGO_URI = f"mongodb://{MONGO_HOST}/"
